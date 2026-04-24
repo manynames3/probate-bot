@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "probate-bot"
+version = "0.1.0"
+description = "County probate lead scraper focused on Georgia probate estate portals."
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+  "playwright>=1.54,<2",
+]
+
+[project.scripts]
+probate-bot = "probate_bot.cli:main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

@@ -1,0 +1,2 @@
+[console_scripts]
+probate-bot = probate_bot.cli:main
