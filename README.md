@@ -184,6 +184,12 @@ Deployment assets for Oracle are included in:
 
 The practical deployment sequence is documented in [docs/oracle-deployment-runbook.md](./docs/oracle-deployment-runbook.md). The default Oracle starter sync set is `Hall`, `Henry`, `Douglas`, and `Cobb` to keep the proof of concept lighter than a full `--all-convenient` run.
 
+### First Impressions Of OCI
+
+First time spinning up anything on Oracle Cloud Infrastructure, the immediate takeaway is that the ARM pricing is difficult to ignore. The free tier is unusually generous, and on paid tiers the ARM instances can come in materially cheaper than comparable compute on AWS, Azure, or GCP. On raw compute-per-dollar, OCI is one of the strongest values available right now.
+
+The tradeoffs are real. OCI has fewer regions and a less mature ecosystem than the big three, so the fit depends heavily on the workload. For a cost-sensitive proof of concept like this one, it is compelling. For teams that need broader service depth or very polished platform ergonomics, the tradeoff may be less attractive.
+
 ## Free Tier Provisioning Notes
 
 This project is designed for `VM.Standard.A1.Flex` on OCI Free Tier, not because the code requires Arm specifically, but because the workload needs more runtime headroom than the micro x86 shape provides.
