@@ -184,6 +184,36 @@ Deployment assets for Oracle are included in:
 
 The practical deployment sequence is documented in [docs/oracle-deployment-runbook.md](./docs/oracle-deployment-runbook.md). The default Oracle starter sync set is `Hall`, `Henry`, `Douglas`, and `Cobb` to keep the proof of concept lighter than a full `--all-convenient` run.
 
+## Free Tier Provisioning Notes
+
+This project is designed for `VM.Standard.A1.Flex` on OCI Free Tier, not because the code requires Arm specifically, but because the workload needs more runtime headroom than the micro x86 shape provides.
+
+### Shape Evaluation
+
+- `VM.Standard.A1.Flex` is the intended free-tier shape because it can allocate meaningful CPU and memory to one Ubuntu VM.
+- `VM.Standard.E2.1.Micro` is **not** a good fallback for this repo as currently designed.
+
+Why:
+
+- Architecture compatibility is fine on both `arm64` and `x86-64`. The Python code is portable, there are no ARM-only Docker images, and Playwright supports Ubuntu on both `x86-64` and `arm64`.
+- Memory is the blocker. This repo runs `nginx`, `gunicorn` + Flask, SQLite, and headless Playwright Chromium on the same machine. That is too tight for a `1 GB` VM once the browser is active.
+- CPU is also a blocker. OCI documents `VM.Standard.E2.1.Micro` as `1/8th of an OCPU` with burst capacity, which is materially smaller than “1 full OCPU.” Browser automation and page parsing are not a good fit for that ceiling.
+- Storage is not the main issue. The installed Python environment is modest, but Playwright browser binaries still consume hundreds of MB on disk. OCI's minimum `50 GB` boot volume is sufficient either way.
+
+### Capacity Error
+
+OCI documents the `Out of capacity` / `Out of host capacity` error as a temporary shortage of Always Free compute capacity in your home region. This is an OCI capacity limitation, not a project bug.
+
+### Recommended Order
+
+1. Stay on `VM.Standard.A1.Flex`.
+2. Retry across every availability domain in your home region instead of retrying only `AD-1`.
+3. Do not hardcode a fault domain. Let OCI select one automatically.
+4. Use the provisioning helper in `deploy/oracle/provision-oci-free-tier.sh` to poll until A1 capacity is available.
+5. Only proceed to app deployment after the A1 VM exists.
+
+The Oracle deployment runbook is in [docs/oracle-deployment-runbook.md](./docs/oracle-deployment-runbook.md).
+
 ## AWS Deployment
 
 This project can be deployed on AWS, but the lowest-cost sensible path is not Lambda.

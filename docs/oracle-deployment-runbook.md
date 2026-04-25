@@ -18,6 +18,23 @@ References:
 - https://docs.oracle.com/iaas/Content/Network/Tasks/assign-public-ip-instance-launch.htm
 - https://docs.oracle.com/en-us/iaas/Content/FreeTier/freetier_topic-Always_Free_Resources.htm
 
+`VM.Standard.E2.1.Micro` is not the recommended fallback for this repository. The code is architecture-portable across `arm64` and `x86-64`, but the runtime profile is not small enough to rely on a `1 GB`, `1/8` OCPU instance for Playwright-based scraping.
+
+## Capacity Errors
+
+OCI documents the `out of host capacity` / `out of capacity` error as a temporary capacity shortage for Always Free shapes in the home region. This is an OCI supply issue, not a project bug.
+
+For this repo:
+
+1. Retry `VM.Standard.A1.Flex` across every availability domain in the home region.
+2. Do not pin a fault domain.
+3. Poll until A1 capacity becomes available.
+4. Do not fall back to `VM.Standard.E2.1.Micro` for the full scraper + web workload.
+
+The provisioning helper for this behavior is:
+
+- `deploy/oracle/provision-oci-free-tier.sh`
+
 ## Network Rules
 
 Open only the ports you need:
@@ -55,6 +72,28 @@ PROBATE_BOT_SYNC_COUNTIES=
 3. Assign a public IPv4 address at launch.
 4. Add ingress rules for TCP `22` and TCP `80`.
 5. SSH to the instance as `ubuntu`.
+
+If the console launch fails with an A1 capacity error, use the CLI polling helper instead of repeatedly retrying one AD manually.
+
+## CLI Provisioning
+
+From a machine with the OCI CLI already configured:
+
+```bash
+export COMPARTMENT_ID=ocid1.compartment.oc1...
+export SUBNET_ID=ocid1.subnet.oc1...
+export IMAGE_ID=ocid1.image.oc1...
+export SSH_PUBLIC_KEY_FILE=$HOME/.ssh/id_ed25519.pub
+export DISPLAY_NAME=probate-bot
+deploy/oracle/provision-oci-free-tier.sh
+```
+
+Notes:
+
+- The script lists all availability domains dynamically.
+- The script never sets a fault domain, so OCI auto-selects one.
+- The script keeps polling every 10 minutes until `VM.Standard.A1.Flex` capacity is available.
+- `IMAGE_ID` should be an Ubuntu image that is compatible with `VM.Standard.A1.Flex`.
 
 ## Remote Deployment
 

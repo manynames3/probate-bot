@@ -21,6 +21,13 @@ Reason:
 - The A1 shape gives materially more headroom than the smallest micro instance.
 - One box keeps the system simple and cheap.
 
+Do not treat `VM.Standard.E2.1.Micro` as an equal fallback for this repository. The x86 architecture is compatible, but the Always Free E2 micro shape only has `1 GB` RAM and `1/8` OCPU burst capacity. That is not enough headroom for the repo's current combination of:
+
+- `nginx`
+- `gunicorn` + Flask web UI
+- SQLite
+- Playwright-driven Chromium scraping
+
 ## POC System Layout
 
 Run everything on one VM:
@@ -158,6 +165,7 @@ It does not make sense as a long-term production platform because:
 - free-tier reliability is not guaranteed
 - the entire system lives on one VM
 - SQLite on one VM is operationally fragile without disciplined backups
+- A1 free-tier capacity can be temporarily unavailable in one or more availability domains
 
 ## Upgrade Trigger
 
