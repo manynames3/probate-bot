@@ -1,0 +1,11 @@
+[Unit]
+Description=Probate Bot SQLite backup
+After=network.target
+
+[Service]
+Type=oneshot
+EnvironmentFile=/etc/default/probate-bot
+WorkingDirectory=__APP_DIR__
+ExecStart=__APP_DIR__/.venv/bin/probate-bot backup-db --db ${PROBATE_BOT_DB} --backup-dir __APP_DIR__/backups --keep 14
+StandardOutput=append:__APP_DIR__/logs/daily-backup.log
+StandardError=append:__APP_DIR__/logs/daily-backup.log

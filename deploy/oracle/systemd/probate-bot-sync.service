@@ -1,0 +1,11 @@
+[Unit]
+Description=Probate Bot daily sync
+After=network.target
+
+[Service]
+Type=oneshot
+EnvironmentFile=/etc/default/probate-bot
+WorkingDirectory=__APP_DIR__
+ExecStart=__APP_DIR__/.venv/bin/probate-bot sync --state ga --all-convenient --days-back 1 --db ${PROBATE_BOT_DB}
+StandardOutput=append:__APP_DIR__/logs/daily-sync.log
+StandardError=append:__APP_DIR__/logs/daily-sync.log

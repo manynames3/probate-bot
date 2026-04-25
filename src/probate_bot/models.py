@@ -59,3 +59,22 @@ class ProbateLead:
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
+
+    def dedupe_key(self) -> str:
+        if self.case_number.strip():
+            return "|".join(
+                [
+                    self.state.strip().lower(),
+                    self.county.strip().lower(),
+                    self.source_system.strip().lower(),
+                    self.case_number.strip().upper(),
+                ]
+            )
+        return "|".join(
+            [
+                self.state.strip().lower(),
+                self.county.strip().lower(),
+                self.source_system.strip().lower(),
+                self.source_url.strip(),
+            ]
+        )

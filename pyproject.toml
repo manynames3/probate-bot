@@ -9,11 +9,14 @@ description = "County probate lead scraper focused on Georgia probate estate por
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
+  "flask>=3.1,<4",
+  "gunicorn>=23,<24",
   "playwright>=1.54,<2",
 ]
 
 [project.scripts]
 probate-bot = "probate_bot.cli:main"
+probate-bot-web = "probate_bot.web:main"
 
 [tool.setuptools]
 package-dir = {"" = "src"}

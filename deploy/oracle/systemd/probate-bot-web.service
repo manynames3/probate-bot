@@ -1,0 +1,14 @@
+[Unit]
+Description=Probate Bot web UI
+After=network.target
+
+[Service]
+Type=simple
+EnvironmentFile=/etc/default/probate-bot
+WorkingDirectory=__APP_DIR__
+ExecStart=__APP_DIR__/.venv/bin/gunicorn --workers 1 --bind ${PROBATE_BOT_HOST}:${PROBATE_BOT_PORT} --factory probate_bot.web:create_app_from_env
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,175 @@
+{% extends "base.html" %}
+{% block title %}Probate Bot Dashboard{% endblock %}
+{% block content %}
+<header class="hero">
+  <div>
+    <p class="eyebrow">Oracle POC Operator Console</p>
+    <h1>Probate lead sync, storage, and review.</h1>
+    <p class="subtitle">Single-box workflow for daily Georgia scraping, deduped SQLite storage, and quick exports.</p>
+  </div>
+  <div class="hero-status">
+    <div class="status-pill {{ 'status-running' if sync_state.running else 'status-idle' }}">
+      {{ 'Sync running' if sync_state.running else 'Sync idle' }}
+    </div>
+    <p>{{ sync_state.message }}</p>
+  </div>
+</header>
+
+<section class="stats-grid">
+  <article class="stat-card">
+    <span>Total leads</span>
+    <strong>{{ summary.total_leads }}</strong>
+  </article>
+  <article class="stat-card">
+    <span>Open leads</span>
+    <strong>{{ summary.open_leads }}</strong>
+  </article>
+  <article class="stat-card">
+    <span>Tracked counties</span>
+    <strong>{{ summary.counties }}</strong>
+  </article>
+  <article class="stat-card">
+    <span>Last seen</span>
+    <strong>{{ summary.last_seen_at or 'No data yet' }}</strong>
+  </article>
+</section>
+
+<section class="panel-grid">
+  <article class="panel sync-panel">
+    <div class="panel-head">
+      <h2>Run sync</h2>
+      <p>Queue a background daily-style scrape into SQLite.</p>
+    </div>
+    <form method="post" action="{{ url_for('trigger_sync') }}" class="sync-form">
+      <label class="checkbox-row">
+        <input type="checkbox" name="all_convenient" checked>
+        <span>Use all convenient Georgia counties</span>
+      </label>
+      <label>
+        <span>Explicit counties</span>
+        <select name="county" multiple size="7">
+          {% for county in supported_counties %}
+            <option value="{{ county }}">{{ county }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <div class="form-row">
+        <label>
+          <span>Days back</span>
+          <input type="number" name="days_back" min="1" value="1">
+        </label>
+        <label>
+          <span>Max results/county</span>
+          <input type="number" name="max_results_per_county" min="1" value="100">
+        </label>
+      </div>
+      <button type="submit" class="primary-button">Start sync</button>
+    </form>
+  </article>
+
+  <article class="panel">
+    <div class="panel-head">
+      <h2>Exports</h2>
+      <p>Download the deduped database as a flat file.</p>
+    </div>
+    <div class="export-actions">
+      <a class="secondary-button" href="{{ url_for('export', fmt='csv') }}">Export CSV</a>
+      <a class="secondary-button" href="{{ url_for('export', fmt='json') }}">Export JSON</a>
+    </div>
+  </article>
+</section>
+
+<section class="panel">
+  <div class="panel-head">
+    <h2>Recent sync runs</h2>
+    <p>Last eight ingestion runs recorded in SQLite.</p>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Status</th>
+          <th>Trigger</th>
+          <th>Counties</th>
+          <th>Window</th>
+          <th>Leads</th>
+          <th>Inserted</th>
+          <th>Updated</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for run in recent_runs %}
+          <tr>
+            <td>{{ run.id }}</td>
+            <td>{{ run.status }}</td>
+            <td>{{ run.trigger_source }}</td>
+            <td>{{ run.counties | join(', ') }}</td>
+            <td>{{ run.start_date }} to {{ run.end_date }}</td>
+            <td>{{ run.lead_count }}</td>
+            <td>{{ run.inserted_count }}</td>
+            <td>{{ run.updated_count }}</td>
+          </tr>
+        {% else %}
+          <tr><td colspan="8">No syncs recorded yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="panel">
+  <div class="panel-head">
+    <h2>Lead review</h2>
+    <p>Filter the latest deduped lead records without leaving the dashboard.</p>
+  </div>
+  <form method="get" action="{{ url_for('index') }}" class="filter-form">
+    <label>
+      <span>County</span>
+      <select name="county">
+        <option value="">All counties</option>
+        {% for county in supported_counties %}
+          <option value="{{ county }}" {% if county_filter == county %}selected{% endif %}>{{ county }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label>
+      <span>Min score</span>
+      <input type="number" name="min_score" min="0" max="100" value="{{ min_score }}">
+    </label>
+    <button type="submit" class="secondary-button">Filter</button>
+  </form>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>County</th>
+          <th>Case #</th>
+          <th>Name</th>
+          <th>Status</th>
+          <th>Filed</th>
+          <th>Address</th>
+          <th>Score</th>
+          <th>Last seen</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for lead in recent_leads %}
+          <tr>
+            <td>{{ lead.county }}</td>
+            <td><a href="{{ lead.source_url }}" target="_blank" rel="noreferrer">{{ lead.case_number }}</a></td>
+            <td>{{ lead.decedent_name or lead.case_name }}</td>
+            <td>{{ lead.status }}</td>
+            <td>{{ lead.filing_date }}</td>
+            <td>{{ lead.property_address }}</td>
+            <td>{{ lead.lead_score }}</td>
+            <td>{{ lead.last_seen_at }}</td>
+          </tr>
+        {% else %}
+          <tr><td colspan="8">No leads in the database yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}
