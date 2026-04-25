@@ -5,12 +5,13 @@
 This MVP is intentionally opinionated:
 
 - Georgia is the primary supported state because a large set of counties participates in the public `georgiaprobaterecords.com` probate portal.
-- Cobb County is noted as convenient and public, but its direct Benchmark portal is not wired up yet.
+- Cobb County is supported through the public Benchmark Court Docket -> List Cases flow.
 - South Carolina is intentionally blocked for lead-generation use because county probate pages warn that using personal information from covered public records for commercial solicitation is prohibited under the South Carolina Family Privacy Protection Act.
 
 ## What It Does
 
 - Automates Georgia estate searches with Playwright
+- Pulls Cobb probate case details through public docket-linked case pages
 - Scores likely real-estate probate leads
 - Exports CSV or JSON
 - Lists source coverage and compliance notes before you run anything
@@ -84,6 +85,10 @@ The scorer boosts records when it sees:
 Those are heuristics, not legal conclusions. You should still review raw filings before mailing, calling, or underwriting.
 
 `--start-date` and `--end-date` target the portal's filed-date fields by default. Use `--date-field deceased` if you want to search by date of death instead.
+
+For Georgia, results are sorted newest-first by case number and traversed across grid pages until `--max-results-per-county` is reached.
+
+For Cobb, date range applies to court-docket event dates and then crawls linked case details from those events.
 
 ## South Carolina Guardrail
 
