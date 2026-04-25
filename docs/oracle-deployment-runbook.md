@@ -24,6 +24,14 @@ References:
 
 OCI documents the `out of host capacity` / `out of capacity` error as a temporary capacity shortage for Always Free shapes in the home region. This is an OCI supply issue, not a project bug.
 
+Observed during setup for this project:
+
+- `VM.Standard.A1.Flex` was tried in `AD-1`, `AD-2`, and `AD-3`
+- all three availability domains returned the same capacity error
+- retries the next day still returned the same error
+
+That behavior is the reason this repository now includes an automated polling provisioner instead of assuming a quick manual retry will succeed.
+
 For this repo:
 
 1. Retry `VM.Standard.A1.Flex` across every availability domain in the home region.

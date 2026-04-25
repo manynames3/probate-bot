@@ -210,6 +210,14 @@ Why:
 
 OCI documents the `Out of capacity` / `Out of host capacity` error as a temporary shortage of Always Free compute capacity in your home region. This is an OCI capacity limitation, not a project bug.
 
+In this setup effort, `VM.Standard.A1.Flex` was attempted in all three availability domains:
+
+- `AD-1`
+- `AD-2`
+- `AD-3`
+
+All three returned the same `Out of capacity for shape VM.Standard.A1.Flex in availability domain ...` error. The same retries were attempted again the next day with the same result. That is what pushed this project toward automated retry logic instead of one-off manual retries in the console.
+
 ### Recommended Order
 
 1. Stay on `VM.Standard.A1.Flex`.
