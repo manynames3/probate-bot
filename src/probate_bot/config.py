@@ -10,6 +10,7 @@ GEORGIA_CONVENIENT_COUNTIES = [
     "Fayette",
     "Forsyth",
     "Chatham",
+    "Cobb",
 ]
 
 
@@ -93,8 +94,11 @@ COUNTY_SOURCES: list[CountySource] = [
         official_reference_url="https://www.cobbcounty.gov/probate-court/case-status-records-search",
         last_verified="2026-04-23",
         convenience="high",
-        supported=False,
-        notes="Official county page says no login is required to view court records and docket.",
+        supported=True,
+        notes=(
+            "Official county page says no login is required. Adapter uses the public Court Docket -> List Cases path "
+            "to reach case detail pages without captcha-protected case search."
+        ),
     ),
     CountySource(
         state="sc",

@@ -6,6 +6,7 @@ import sys
 from probate_bot.config import GEORGIA_CONVENIENT_COUNTIES, find_source, get_sources
 from probate_bot.exporters import write_csv, write_json
 from probate_bot.models import ComplianceError, ProbateBotError, SearchRequest
+from probate_bot.scrapers.cobb_benchmark import CobbBenchmarkScraper
 from probate_bot.scrapers.georgia_probate_records import GeorgiaProbateRecordsScraper
 
 
@@ -82,19 +83,27 @@ def handle_run(args: argparse.Namespace) -> int:
         joined = ", ".join(unsupported)
         raise ProbateBotError(f"These counties are not runnable with the current adapter set: {joined}")
 
-    request = SearchRequest(
-        state=args.state,
-        counties=counties,
-        start_date=args.start_date,
-        end_date=args.end_date,
-        date_field=args.date_field,
-        headless=not args.headed,
-        max_results_per_county=args.max_results_per_county,
-        use_case=args.use_case,
-    )
+    counties_by_system: dict[str, list[str]] = {}
+    for county in counties:
+        source = find_source(args.state, county)
+        if source is None:
+            continue
+        counties_by_system.setdefault(source.system, []).append(county)
 
-    scraper = GeorgiaProbateRecordsScraper()
-    leads = scraper.run(request)
+    leads = []
+    for system, system_counties in counties_by_system.items():
+        request = SearchRequest(
+            state=args.state,
+            counties=system_counties,
+            start_date=args.start_date,
+            end_date=args.end_date,
+            date_field=args.date_field,
+            headless=not args.headed,
+            max_results_per_county=args.max_results_per_county,
+            use_case=args.use_case,
+        )
+        scraper = _build_scraper(system)
+        leads.extend(scraper.run(request))
 
     if args.format == "csv":
         output_path = write_csv(leads, args.out)
@@ -103,6 +112,14 @@ def handle_run(args: argparse.Namespace) -> int:
 
     print(f"Wrote {len(leads)} leads to {output_path}")
     return 0
+
+
+def _build_scraper(system: str):
+    if system == "georgiaprobaterecords":
+        return GeorgiaProbateRecordsScraper()
+    if system == "cobb-benchmark":
+        return CobbBenchmarkScraper()
+    raise ProbateBotError(f"No scraper is registered for source system '{system}'.")
 
 
 def main() -> int:

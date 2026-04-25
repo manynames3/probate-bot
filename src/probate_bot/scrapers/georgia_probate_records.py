@@ -60,22 +60,112 @@ class GeorgiaProbateRecordsScraper(BaseScraper):
         page.wait_for_load_state("networkidle")
         page.wait_for_timeout(1000)
 
-        detail_links = self._collect_detail_links(page)
+        detail_links = self._collect_detail_links_paginated(page, request.max_results_per_county)
         county_leads: list[ProbateLead] = []
-        for detail_link in detail_links[: request.max_results_per_county]:
+        for detail_link in detail_links:
             lead = self._parse_detail(page, county, detail_link)
             county_leads.append(score_lead(lead))
 
         return county_leads
 
-    def _collect_detail_links(self, page) -> list[str]:
-        links: list[str] = []
-        for locator in page.locator("a").all():
+    def _collect_detail_entries(self, page) -> list[tuple[str, str]]:
+        entries: list[tuple[str, str]] = []
+        for locator in page.locator("#ctl00_cpMain_rgEstates_ctl00 a[href*='EstateDetails.aspx?RECID=']").all():
             href = locator.get_attribute("href") or ""
             if "EstateDetails.aspx?RECID=" in href:
                 absolute = urljoin(page.url, href)
-                links.append(absolute)
-        return list(dict.fromkeys(links))
+                case_no = locator.inner_text().strip()
+                entries.append((case_no, absolute))
+        return list(dict.fromkeys(entries))
+
+    def _collect_detail_links_paginated(self, page, max_results: int) -> list[str]:
+        entries: list[tuple[str, str]] = []
+        seen_signatures: set[str] = set()
+        while len(entries) < max_results:
+            page_entries = self._collect_detail_entries(page)
+            entries.extend(page_entries)
+            entries = list(dict.fromkeys(entries))
+            if len(entries) >= max_results:
+                break
+
+            signature = self._results_signature(page)
+            if signature in seen_signatures:
+                break
+            seen_signatures.add(signature)
+
+            if not self._go_to_next_page(page, signature):
+                break
+
+        # Portal sort controls are inconsistent; rank by parsed case-number recency locally.
+        ranked = sorted(entries, key=lambda item: self._case_sort_key(item[0]), reverse=True)
+        return [url for _, url in ranked[:max_results]]
+
+    def _results_signature(self, page) -> str:
+        first = page.locator("#ctl00_cpMain_rgEstates_ctl00 a[href*='EstateDetails.aspx?RECID=']")
+        first_case = first.first.inner_text().strip() if first.count() else ""
+        current_page = page.locator("#ctl00_cpMain_rgEstates_ctl00 a.rgCurrentPage")
+        current_page_text = current_page.first.inner_text().strip() if current_page.count() else "1"
+        return f"{current_page_text}|{first_case}"
+
+    def _go_to_next_page(self, page, previous_signature: str) -> bool:
+        clicked = page.evaluate(
+            """
+            () => {
+              const selector = '#ctl00_cpMain_rgEstates_ctl00 a[href*="ctl00$cpMain$rgEstates$ctl00$ctl03$ctl01$"]';
+              const links = [...document.querySelectorAll(selector)]
+                .filter(a => a.offsetParent !== null)
+                .map(a => ({
+                  text: (a.textContent || '').trim(),
+                  className: a.className || '',
+                  node: a,
+                }));
+              if (!links.length) return false;
+
+              const current = links.find(l => l.className.includes('rgCurrentPage'));
+              let target = null;
+              if (current && /^\\d+$/.test(current.text)) {
+                const nextText = String(parseInt(current.text, 10) + 1);
+                target = links.find(l => l.text === nextText)?.node || null;
+              }
+              if (!target) {
+                target = links.find(l => l.text === '...')?.node || null;
+              }
+              if (!target) return false;
+              target.click();
+              return true;
+            }
+            """
+        )
+        if not clicked:
+            return False
+
+        # Telerik updates this grid via partial postback. Wait until page marker actually changes.
+        for _ in range(24):
+            page.wait_for_timeout(300)
+            if self._results_signature(page) != previous_signature:
+                return True
+        return False
+
+    def _case_sort_key(self, case_number: str) -> tuple[int, int, int]:
+        case_number = (case_number or "").strip().upper()
+        match_legacy = re.search(r"\bE-+(\d{2})-(\d+)\b", case_number)
+        if match_legacy:
+            yy = int(match_legacy.group(1))
+            serial = int(match_legacy.group(2))
+            year = 2000 + yy
+            return (year, serial, len(case_number))
+
+        match_modern = re.search(r"\b(\d{2})-[A-Z]-(\d+)\b", case_number)
+        if match_modern:
+            yy = int(match_modern.group(1))
+            serial = int(match_modern.group(2))
+            year = 2000 + yy
+            return (year, serial, len(case_number))
+
+        digits = re.findall(r"\d+", case_number)
+        if digits:
+            return (1900, int(digits[-1]), len(case_number))
+        return (0, 0, 0)
 
     def _parse_detail(self, page, county: str, detail_url: str) -> ProbateLead:
         page.goto(detail_url, wait_until="domcontentloaded")

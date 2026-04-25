@@ -31,9 +31,21 @@ PLAYWRIGHT_BROWSERS_PATH=.playwright probate-bot run \
   --state ga \
   --county Hall \
   --start-date 2026-01-01 \
-  --end-date 2026-04-23 \
+  --end-date 2026-04-24 \
   --max-results-per-county 25 \
   --out ./tmp/hall.csv
+```
+
+Run a Cobb docket-linked sample:
+
+```bash
+PLAYWRIGHT_BROWSERS_PATH=.playwright probate-bot run \
+  --state ga \
+  --county Cobb \
+  --start-date 2026-04-24 \
+  --end-date 2026-04-24 \
+  --max-results-per-county 20 \
+  --out ./tmp/cobb.csv
 ```
 
 ## What the Score Means
@@ -47,5 +59,6 @@ The lead score is just a prioritization heuristic.
 ## Current Limitations
 
 - The Georgia portal results grid currently needs a richer newest-first and pagination pass.
-- Date-range inputs are accepted by the live portal UI, but the MVP should still be treated as a county-scoped collector first and a perfect server-side filter second.
+- Georgia results are now paginated and sorted newest-first, but portal filtering behavior can still vary by county/system data quality.
+- Cobb extraction currently depends on docket events and linked cases for the selected dates.
 - South Carolina automation is intentionally not enabled for solicitation workflows in this starter.
