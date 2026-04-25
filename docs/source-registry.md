@@ -18,11 +18,15 @@ These counties are routed through the public Georgia Probate Records estates por
 - Portal: `https://www.georgiaprobaterecords.com/Estates/SearchEstates.aspx`
 - Participating courts list: `https://www.georgiaprobaterecords.com/Courts/CourtInformation.aspx`
 
-### Public and convenient, but not wired yet
+### Supported now (direct county adapter)
 
 - Cobb County, GA
   - Official page: `https://www.cobbcounty.gov/probate-court/case-status-records-search`
-  - Public search portal: `https://probateonline.cobbcounty.gov/BenchmarkWeb/Home.aspx/Search`
+  - Public portal: `https://probateonline.cobbcounty.gov/BenchmarkWeb/Home.aspx/Search`
+  - Adapter path: `Court Docket` -> `List Cases` -> `CourtCase.aspx/Details/...`
+
+### Public and convenient, but not wired yet
+
 - Athens-Clarke County, GA
   - Official page: `https://www.accgov.com/735/Probate-Court`
   - Court portal: `https://athensclarkeprobatecourt.com/`
@@ -43,5 +47,5 @@ South Carolina sources were researched, but are intentionally blocked in this st
 ## Notes
 
 - The Georgia adapter was live-validated against Hall County on April 23, 2026.
-- The current MVP reliably collects county-scoped result pages and estate detail pages.
-- The next engineering pass should improve newest-first navigation and deeper pagination inside the Georgia results grid.
+- The current MVP now supports newest-first sorting and paginated traversal for Georgia grid results.
+- Cobb extraction is based on public docket-linked case pages and may not expose the same property-address richness as Georgia estate detail pages.
