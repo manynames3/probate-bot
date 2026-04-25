@@ -8,10 +8,11 @@ DB_PATH="${DB_PATH:-$APP_DIR/data/probate.sqlite}"
 sudo apt-get update
 sudo apt-get install -y python3 python3-venv python3-pip nginx git
 
+cd "$APP_DIR"
+chmod +x deploy/oracle/*.sh
+
 sudo mkdir -p "$APP_DIR"/{data,logs,exports,backups}
 sudo chown -R "$APP_USER":"$APP_USER" "$APP_DIR"
-
-cd "$APP_DIR"
 python3 -m venv .venv
 .venv/bin/pip install --upgrade pip
 .venv/bin/pip install -e .
@@ -44,3 +45,4 @@ sudo systemctl restart nginx
 
 echo "Bootstrap complete."
 echo "Run an immediate sync with: sudo systemctl start probate-bot-sync.service"
+echo "Edit /etc/default/probate-bot to change counties, max results, or sync window."

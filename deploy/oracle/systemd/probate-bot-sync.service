@@ -6,6 +6,6 @@ After=network.target
 Type=oneshot
 EnvironmentFile=/etc/default/probate-bot
 WorkingDirectory=__APP_DIR__
-ExecStart=__APP_DIR__/.venv/bin/probate-bot sync --state ga --all-convenient --days-back 1 --db ${PROBATE_BOT_DB}
+ExecStart=__APP_DIR__/deploy/oracle/run-sync.sh
 StandardOutput=append:__APP_DIR__/logs/daily-sync.log
 StandardError=append:__APP_DIR__/logs/daily-sync.log

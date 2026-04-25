@@ -22,6 +22,7 @@ This MVP is intentionally opinionated:
 - Operator workflow: [docs/operator-guide.md](./docs/operator-guide.md)
 - AWS deployment notes: [docs/aws-deployment.md](./docs/aws-deployment.md)
 - Oracle POC deployment notes: [docs/oracle-poc.md](./docs/oracle-poc.md)
+- Oracle deployment runbook: [docs/oracle-deployment-runbook.md](./docs/oracle-deployment-runbook.md)
 
 ## Current Source Notes
 
@@ -176,8 +177,12 @@ The detailed deployment and success criteria are documented in [docs/oracle-poc.
 Deployment assets for Oracle are included in:
 
 - `deploy/oracle/bootstrap.sh`
+- `deploy/oracle/deploy-remote.sh`
+- `deploy/oracle/run-sync.sh`
 - `deploy/oracle/systemd/`
 - `deploy/oracle/nginx-probate-bot.conf`
+
+The practical deployment sequence is documented in [docs/oracle-deployment-runbook.md](./docs/oracle-deployment-runbook.md). The default Oracle starter sync set is `Hall`, `Henry`, `Douglas`, and `Cobb` to keep the proof of concept lighter than a full `--all-convenient` run.
 
 ## AWS Deployment
 

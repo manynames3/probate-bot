@@ -73,10 +73,14 @@ probate-bot web \
 In this repository, the preferred Oracle setup uses included deployment assets instead of raw cron:
 
 - `deploy/oracle/bootstrap.sh`
+- `deploy/oracle/deploy-remote.sh`
+- `deploy/oracle/run-sync.sh`
 - `deploy/oracle/systemd/probate-bot-web.service`
 - `deploy/oracle/systemd/probate-bot-sync.timer`
 - `deploy/oracle/systemd/probate-bot-backup.timer`
 - `deploy/oracle/nginx-probate-bot.conf`
+
+The concrete click-by-click deployment sequence is in [oracle-deployment-runbook.md](./oracle-deployment-runbook.md).
 
 ## Required Safeguards
 
