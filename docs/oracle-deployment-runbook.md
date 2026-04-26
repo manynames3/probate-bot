@@ -76,10 +76,11 @@ PROBATE_BOT_SYNC_COUNTIES=
 ## Oracle Console Steps
 
 1. In OCI, create a VCN with internet connectivity if you do not already have one.
-2. Launch one Ubuntu VM in a public subnet.
-3. Assign a public IPv4 address at launch.
-4. Add ingress rules for TCP `22` and TCP `80`.
-5. SSH to the instance as `ubuntu`.
+2. Create a public subnet inside that VCN if one does not already exist.
+3. Launch one Ubuntu VM in that public subnet.
+4. Assign a public IPv4 address at launch.
+5. Add ingress rules for TCP `22` and TCP `80`.
+6. SSH to the instance as `ubuntu`.
 
 If the console launch fails with an A1 capacity error, use the CLI polling helper instead of repeatedly retrying one AD manually.
 
@@ -90,7 +91,6 @@ From a machine with the OCI CLI already configured:
 ```bash
 export COMPARTMENT_ID=ocid1.compartment.oc1...
 export SUBNET_ID=ocid1.subnet.oc1...
-export IMAGE_ID=ocid1.image.oc1...
 export SSH_PUBLIC_KEY_FILE=$HOME/.ssh/id_ed25519.pub
 export DISPLAY_NAME=probate-bot
 deploy/oracle/provision-oci-free-tier.sh
@@ -101,7 +101,19 @@ Notes:
 - The script lists all availability domains dynamically.
 - The script never sets a fault domain, so OCI auto-selects one.
 - The script keeps polling every 10 minutes until `VM.Standard.A1.Flex` capacity is available.
-- `IMAGE_ID` should be an Ubuntu image that is compatible with `VM.Standard.A1.Flex`.
+- If `IMAGE_ID` is unset, the script tries to auto-discover the latest available `Canonical Ubuntu 24.04` image compatible with `VM.Standard.A1.Flex`.
+- If auto-discovery does not return a result in your tenancy, set `IMAGE_ID` explicitly or override `IMAGE_COMPARTMENT_ID` and `IMAGE_DISPLAY_NAME_FILTER`.
+- `SUBNET_ID` must already exist. The script launches compute only; it does not create networking resources.
+
+Example with an explicit image pin:
+
+```bash
+export COMPARTMENT_ID=ocid1.compartment.oc1...
+export SUBNET_ID=ocid1.subnet.oc1...
+export IMAGE_ID=ocid1.image.oc1...
+export SSH_PUBLIC_KEY_FILE=$HOME/.ssh/id_ed25519.pub
+deploy/oracle/provision-oci-free-tier.sh
+```
 
 ## Remote Deployment
 

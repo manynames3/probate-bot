@@ -8,7 +8,6 @@ fi
 
 : "${COMPARTMENT_ID:?Set COMPARTMENT_ID to the OCI compartment OCID.}"
 : "${SUBNET_ID:?Set SUBNET_ID to the target public subnet OCID.}"
-: "${IMAGE_ID:?Set IMAGE_ID to an Ubuntu image OCID compatible with VM.Standard.A1.Flex.}"
 : "${SSH_PUBLIC_KEY_FILE:?Set SSH_PUBLIC_KEY_FILE to your public SSH key path.}"
 
 DISPLAY_NAME="${DISPLAY_NAME:-probate-bot}"
@@ -18,6 +17,8 @@ MEMORY_GBS="${MEMORY_GBS:-6}"
 BOOT_VOLUME_GBS="${BOOT_VOLUME_GBS:-50}"
 POLL_SECONDS="${POLL_SECONDS:-600}"
 ASSIGN_PUBLIC_IP="${ASSIGN_PUBLIC_IP:-true}"
+IMAGE_COMPARTMENT_ID="${IMAGE_COMPARTMENT_ID:-${COMPARTMENT_ID}}"
+IMAGE_DISPLAY_NAME_FILTER="${IMAGE_DISPLAY_NAME_FILTER:-Canonical Ubuntu 24.04}"
 
 if [[ "${SHAPE}" != "VM.Standard.A1.Flex" ]]; then
   echo "error: This project is provisioned only for VM.Standard.A1.Flex. E2.1.Micro is intentionally not used." >&2
@@ -28,6 +29,51 @@ if [[ ! -f "${SSH_PUBLIC_KEY_FILE}" ]]; then
   echo "error: SSH public key file not found: ${SSH_PUBLIC_KEY_FILE}" >&2
   exit 2
 fi
+
+resolve_image_id() {
+  if [[ -n "${IMAGE_ID:-}" ]]; then
+    echo "${IMAGE_ID}"
+    return 0
+  fi
+
+  echo "Resolving Ubuntu image automatically from compartment ${IMAGE_COMPARTMENT_ID}..." >&2
+
+  local resolved_image_id
+  resolved_image_id="$(
+    oci compute image list \
+      --compartment-id "${IMAGE_COMPARTMENT_ID}" \
+      --all \
+      --operating-system Ubuntu \
+      --shape "${SHAPE}" \
+      --query "sort_by(data[?contains(\"display-name\", '${IMAGE_DISPLAY_NAME_FILTER}') && \"lifecycle-state\" == 'AVAILABLE'], &\"time-created\")[-1].id" \
+      --raw-output 2>/dev/null || true
+  )"
+
+  if [[ -n "${resolved_image_id}" && "${resolved_image_id}" != "null" ]]; then
+    echo "${resolved_image_id}"
+    return 0
+  fi
+
+  resolved_image_id="$(
+    oci compute image list \
+      --compartment-id "${IMAGE_COMPARTMENT_ID}" \
+      --all \
+      --query "sort_by(data[?contains(\"display-name\", '${IMAGE_DISPLAY_NAME_FILTER}') && \"lifecycle-state\" == 'AVAILABLE'], &\"time-created\")[-1].id" \
+      --raw-output 2>/dev/null || true
+  )"
+
+  if [[ -n "${resolved_image_id}" && "${resolved_image_id}" != "null" ]]; then
+    echo "${resolved_image_id}"
+    return 0
+  fi
+
+  echo "error: Unable to resolve an Ubuntu image automatically." >&2
+  echo "Set IMAGE_ID explicitly, or adjust IMAGE_COMPARTMENT_ID / IMAGE_DISPLAY_NAME_FILTER." >&2
+  exit 1
+}
+
+IMAGE_ID="$(resolve_image_id)"
+echo "Using image ${IMAGE_ID}"
 
 echo "Listing availability domains for ${COMPARTMENT_ID}..."
 availability_domains=()

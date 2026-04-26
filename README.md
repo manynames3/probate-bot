@@ -226,6 +226,14 @@ All three returned the same `Out of capacity for shape VM.Standard.A1.Flex in av
 4. Use the provisioning helper in `deploy/oracle/provision-oci-free-tier.sh` to poll until A1 capacity is available.
 5. Only proceed to app deployment after the A1 VM exists.
 
+### Image Selection
+
+The OCI provisioner no longer requires a manual `IMAGE_ID` by default.
+
+- If `IMAGE_ID` is unset, `deploy/oracle/provision-oci-free-tier.sh` tries to auto-discover the latest available `Canonical Ubuntu 24.04` image for `VM.Standard.A1.Flex`.
+- If OCI CLI image discovery in your tenancy does not return a usable result, you can still set `IMAGE_ID` explicitly.
+- `SUBNET_ID` is still required. The provisioner does not create networking for you.
+
 The Oracle deployment runbook is in [docs/oracle-deployment-runbook.md](./docs/oracle-deployment-runbook.md).
 
 ## AWS Deployment
